@@ -390,7 +390,7 @@
         { id: "thousand-watts", icon: "✧", name: "A Thousand Watts", description: "Generate 1,000 lifetime energy in a run.", reward: "+10% to all output.", condition: (s) => s.lifetime >= 1000 },
         { id: "ten-generators", icon: "⌘", name: "Grid Architect", description: "Own 10 generators at once.", reward: "Tap power increased by 50%.", condition: (s) => Object.values(s.generators).reduce((sum, count) => sum + count, 0) >= 10 },
         { id: "first-shard", icon: "◆", name: "Beyond the Grid", description: "Earn your first core shard.", reward: "+25% permanent output.", condition: (s) => s.shards >= 1 },
-        { id: "first-ignition", icon: "⟳", name: "Ignition Protocol", description: "Complete your first real core ignition. Test ignitions do not count.", reward: "Unlock Auto-Buyer and the Automation tab.", condition: (s) => s.ignitions >= 1 },
+        { id: "first-ignition", icon: "⟳", name: "Ignition Protocol", description: "Complete your first core ignition, including a free test ignition.", reward: "Unlock Auto-Buyer and the Automation tab.", condition: (s) => s.ignitions >= 1 },
         { id: "million-watts", icon: "✹", name: "Power Millionaire", description: "Generate 1,000,000 lifetime energy in a run.", reward: "+25% generator output.", condition: (s) => s.lifetime >= 1000000 },
         { id: "antimatter-born", icon: "⊛", name: "Matter of Antimatter", description: "Build your first Antimatter Forge.", reward: "Each Antimatter Forge adds 1% output to every generator.", condition: (s) => s.generators.antimatter > 0 },
         { id: "quantum-weaver", icon: "⌬", name: "Weaver of Worlds", description: "Build your first Quantum Loom.", reward: "Each Quantum Loom adds 1% tap power.", condition: (s) => s.generators.quantum > 0 }
@@ -944,7 +944,7 @@
           ...nextRun,
           shards: state.shards + gained,
           coreCharge: state.coreCharge + gained,
-          ignitions: state.ignitions + (isTest ? 0 : 1),
+          ignitions: state.ignitions + 1,
           achievements: state.achievements,
           research: state.research,
           ignitionUpgrades: upgrades,
