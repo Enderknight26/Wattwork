@@ -1,0 +1,1050 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07111f">
+  <title>Wattwork — Energy Incremental</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07111f;
+      --panel: #0d1a2b;
+      --panel-raised: #112238;
+      --line: rgba(159, 195, 226, .12);
+      --muted: #8296ad;
+      --text: #eef7ff;
+      --cyan: #67e8f9;
+      --mint: #8af0c3;
+      --amber: #ffc978;
+      --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: var(--font);
+      background:
+        radial-gradient(ellipse at 50% -15%, rgba(40, 117, 163, .2), transparent 55%),
+        radial-gradient(ellipse at 90% 65%, rgba(15, 83, 86, .1), transparent 35%),
+        var(--bg);
+    }
+    button { font: inherit; }
+    .shell { width: min(1120px, calc(100% - 40px)); margin: 0 auto; padding: 27px 0 38px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 29px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px;
+      color: #07111f; font-size: 22px; font-weight: 900;
+      background: linear-gradient(145deg, var(--cyan), var(--mint));
+      box-shadow: 0 0 26px rgba(103, 232, 249, .25);
+    }
+    .brand-name { font-size: 15px; font-weight: 800; letter-spacing: .14em; }
+    .brand-sub { color: var(--muted); font-size: 11px; letter-spacing: .08em; margin-top: 3px; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .live-pill, .save-label {
+      display: inline-flex; align-items: center; gap: 7px; color: #a9c0d3; font-size: 11px;
+      letter-spacing: .08em; text-transform: uppercase;
+    }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 10px var(--mint); }
+    .icon-button {
+      padding: 8px 11px; color: var(--muted); background: transparent; border: 1px solid var(--line);
+      border-radius: 9px; cursor: pointer; transition: color .18s, border-color .18s;
+    }
+    .icon-button:hover { color: var(--text); border-color: rgba(159, 195, 226, .34); }
+    .tabs { display: flex; gap: 5px; margin: 0 0 19px; padding: 5px; border: 1px solid var(--line); border-radius: 12px; background: rgba(10, 22, 37, .72); overflow-x: auto; }
+    .tab-button { flex: 1 0 auto; padding: 10px 15px; border: 1px solid transparent; border-radius: 8px; color: var(--muted); background: transparent; cursor: pointer; font-size: 11px; font-weight: 750; letter-spacing: .04em; transition: color .18s, background .18s, border-color .18s; }
+    .tab-button:hover { color: var(--text); }
+    .tab-button[aria-selected="true"] { color: var(--cyan); border-color: rgba(103, 232, 249, .17); background: rgba(103, 232, 249, .075); }
+    [hidden] { display: none !important; }
+    .tab-content { min-height: 400px; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(330px, .85fr); gap: 19px; align-items: start; }
+    .panel { border: 1px solid var(--line); background: linear-gradient(160deg, rgba(15, 30, 48, .96), rgba(10, 22, 37, .96)); border-radius: 17px; }
+    .reactor { position: relative; min-height: 492px; padding: 27px; overflow: hidden; }
+    .reactor::before {
+      content: ""; position: absolute; width: 360px; height: 360px; left: 50%; top: 43%;
+      transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none;
+      background: radial-gradient(circle, rgba(35, 163, 185, .1), transparent 68%);
+    }
+    .eyebrow { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+    .reactor-head { display: flex; justify-content: space-between; align-items: flex-start; position: relative; z-index: 1; }
+    .reactor-head h1 { font-size: 19px; margin: 6px 0 0; letter-spacing: -.02em; }
+    .stage-badge { padding: 6px 9px; color: var(--cyan); background: rgba(103, 232, 249, .08); border: 1px solid rgba(103, 232, 249, .15); border-radius: 7px; font-size: 10px; font-weight: 700; letter-spacing: .08em; }
+    .energy-display { position: relative; z-index: 1; text-align: center; margin-top: 43px; }
+    .energy-value { font-size: clamp(42px, 7vw, 68px); font-weight: 750; line-height: 1; letter-spacing: -.065em; font-variant-numeric: tabular-nums; text-shadow: 0 0 32px rgba(103, 232, 249, .13); }
+    .energy-unit { color: var(--cyan); font-size: 11px; font-weight: 750; letter-spacing: .22em; margin-top: 11px; }
+    .rate { color: var(--muted); font-size: 12px; margin-top: 9px; font-variant-numeric: tabular-nums; }
+    .rate strong { color: var(--mint); font-weight: 650; }
+    .reactor-wrap { position: relative; z-index: 1; display: grid; place-items: center; margin: 22px auto 17px; width: 200px; height: 200px; }
+    .orbit { position: absolute; border-radius: 50%; border: 1px solid rgba(103, 232, 249, .13); }
+    .orbit.outer { inset: 0; animation: rotate 24s linear infinite; }
+    .orbit.outer::before, .orbit.inner::after { content: ""; position: absolute; width: 5px; height: 5px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 12px var(--cyan); }
+    .orbit.outer::before { top: 23px; left: 30px; }
+    .orbit.inner { inset: 14px; border-style: dashed; border-color: rgba(138, 240, 195, .15); animation: rotate 18s linear infinite reverse; }
+    .orbit.inner::after { bottom: 18px; right: 22px; width: 4px; height: 4px; background: var(--mint); box-shadow: 0 0 10px var(--mint); }
+    @keyframes rotate { to { transform: rotate(360deg); } }
+    .charge-button {
+      position: relative; width: 136px; height: 136px; border-radius: 50%; cursor: pointer; color: white;
+      border: 1px solid rgba(140, 245, 244, .62);
+      background: radial-gradient(circle at 42% 34%, #397d91 0, #17455d 35%, #10283d 72%);
+      box-shadow: inset 0 0 28px rgba(103, 232, 249, .2), 0 0 42px rgba(38, 195, 207, .18);
+      transition: transform .12s, box-shadow .2s, filter .2s;
+    }
+    .charge-button:hover { filter: brightness(1.14); box-shadow: inset 0 0 30px rgba(103, 232, 249, .28), 0 0 55px rgba(38, 195, 207, .32); }
+    .charge-button:active { transform: scale(.94); }
+    .charge-button:focus-visible, button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; }
+    .charge-icon { display: block; font-size: 36px; line-height: 1; color: var(--cyan); filter: drop-shadow(0 0 10px rgba(103, 232, 249, .55)); }
+    .charge-label { display: block; margin-top: 8px; font-size: 9px; letter-spacing: .16em; font-weight: 800; }
+    .tap-feedback { position: absolute; z-index: 2; color: var(--mint); font-weight: 800; pointer-events: none; animation: float-up .8s ease-out forwards; }
+    @keyframes float-up { from { opacity: 1; transform: translateY(0) scale(.9); } to { opacity: 0; transform: translateY(-65px) scale(1.15); } }
+    .progress-block { position: relative; z-index: 1; margin-top: 11px; }
+    .progress-copy { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 10px; margin-bottom: 8px; }
+    .progress-track { height: 5px; border-radius: 5px; overflow: hidden; background: rgba(255, 255, 255, .07); }
+    .progress-fill { height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, #39c8d8, var(--mint)); box-shadow: 0 0 12px rgba(103, 232, 249, .35); transition: width .3s; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+    .stat { padding: 13px 14px; border: 1px solid var(--line); border-radius: 11px; background: rgba(10, 22, 37, .64); }
+    .stat-label { color: var(--muted); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
+    .stat-value { margin-top: 6px; font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .shop { padding: 22px; }
+    .shop-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 17px; }
+    .shop-title-row h2 { margin: 5px 0 0; font-size: 19px; letter-spacing: -.03em; }
+    .shop-count { color: var(--muted); font-size: 10px; margin-top: 5px; }
+    .shop-grid { display: grid; gap: 10px; }
+    .achievements-heading, .settings-heading { margin: 0 0 6px; font-size: 20px; letter-spacing: -.03em; }
+    .tab-intro { margin: 0 0 18px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .achievement-summary { margin-bottom: 14px; color: var(--cyan); font-size: 11px; font-weight: 700; }
+    .achievement-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
+    .achievement-card { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 12px; align-items: start; min-height: 104px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, .018); }
+    .achievement-card.unlocked { border-color: rgba(138, 240, 195, .25); background: rgba(138, 240, 195, .035); }
+    .achievement-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; color: #65788b; background: rgba(255, 255, 255, .04); font-size: 20px; filter: grayscale(1); }
+    .achievement-card.unlocked .achievement-icon { color: var(--mint); background: rgba(138, 240, 195, .09); filter: none; }
+    .achievement-name { font-size: 12px; font-weight: 750; }
+    .achievement-description, .achievement-reward { margin-top: 5px; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .achievement-reward { color: var(--cyan); }
+    .achievement-status { margin-top: 7px; color: #72869b; font-size: 9px; font-weight: 750; letter-spacing: .1em; }
+    .achievement-card.unlocked .achievement-status { color: var(--mint); }
+    .settings-grid { display: grid; gap: 11px; max-width: 700px; }
+    .core-research { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
+    .core-research h3 { margin: 0; font-size: 14px; }
+    .core-research-intro { margin: 6px 0 13px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .core-research-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .research-card { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; gap: 11px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 11px; background: rgba(255, 255, 255, .018); }
+    .research-card.affordable { border-color: rgba(255, 201, 120, .27); background: rgba(255, 201, 120, .035); }
+    .research-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; color: var(--amber); background: rgba(255, 201, 120, .08); font-size: 18px; }
+    .research-name { font-size: 11px; font-weight: 750; }
+    .research-description { margin-top: 4px; color: var(--muted); font-size: 9px; line-height: 1.45; }
+    .research-button { min-width: 70px; padding: 8px; border: 1px solid rgba(255, 201, 120, .25); border-radius: 8px; color: var(--amber); background: rgba(255, 201, 120, .06); cursor: pointer; font-size: 9px; font-weight: 750; }
+    .research-button:disabled { color: #6e8092; border-color: var(--line); background: rgba(255, 255, 255, .025); cursor: not-allowed; }
+    .research-wallet { margin-top: 12px; color: var(--amber); font-size: 11px; font-weight: 700; }
+    .setting-row { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 15px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, .018); }
+    .setting-name { font-size: 12px; font-weight: 700; }
+    .setting-description { margin-top: 5px; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .setting-control { min-width: 145px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--text); background: var(--panel-raised); }
+    .setting-control:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+    .setting-checkbox { width: 19px; height: 19px; accent-color: var(--cyan); cursor: pointer; }
+    .settings-danger { margin-top: 17px; padding: 15px; border: 1px solid rgba(255, 140, 120, .16); border-radius: 12px; background: rgba(255, 140, 120, .025); }
+    .settings-danger h3 { margin: 0 0 6px; font-size: 12px; }
+    .settings-danger p { margin: 0 0 12px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .reset-settings-button { padding: 9px 12px; border: 1px solid rgba(255, 140, 120, .25); border-radius: 8px; color: #ffad9c; background: rgba(255, 140, 120, .06); cursor: pointer; font-size: 10px; font-weight: 750; }
+    body[data-theme="solar"] { --cyan: #ffc978; --mint: #ffe09b; --amber: #ffb96a; --bg: #17120d; --panel: #21190f; --panel-raised: #302316; --line: rgba(235, 195, 145, .15); --muted: #b39b7d; --text: #fff5e6; }
+    body[data-theme="solar"] { background: radial-gradient(ellipse at 50% -15%, rgba(181, 117, 40, .2), transparent 55%), radial-gradient(ellipse at 90% 65%, rgba(115, 70, 15, .12), transparent 35%), var(--bg); }
+    body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    .upgrade-card {
+      display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; gap: 12px; align-items: center;
+      min-height: 78px; padding: 12px; border: 1px solid var(--line); border-radius: 12px;
+      background: rgba(255, 255, 255, .018); transition: border-color .18s, background .18s, opacity .18s;
+    }
+    .upgrade-card.affordable { border-color: rgba(103, 232, 249, .27); background: rgba(103, 232, 249, .035); }
+    .upgrade-card.locked { opacity: .56; }
+    .upgrade-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 11px; color: var(--cyan); background: rgba(103, 232, 249, .08); font-size: 19px; }
+    .upgrade-name { font-size: 12px; font-weight: 700; }
+    .upgrade-description { color: var(--muted); font-size: 10px; margin-top: 4px; line-height: 1.4; }
+    .buy-button {
+      min-width: 82px; padding: 9px 10px; border: 1px solid rgba(103, 232, 249, .24); border-radius: 8px;
+      color: var(--cyan); background: rgba(103, 232, 249, .07); cursor: pointer; font-size: 10px; font-weight: 750;
+      transition: all .15s;
+    }
+    .buy-button:hover:not(:disabled) { color: #06121c; background: var(--cyan); }
+    .buy-button:disabled { color: #6e8092; border-color: var(--line); background: rgba(255, 255, 255, .025); cursor: not-allowed; }
+    .buy-cost { display: block; margin-top: 4px; color: inherit; font-size: 9px; font-weight: 500; opacity: .8; white-space: nowrap; }
+    .prestige {
+      display: flex; align-items: center; justify-content: space-between; gap: 13px; margin-top: 14px; padding: 14px;
+      border: 1px solid rgba(255, 201, 120, .15); border-radius: 12px; background: rgba(255, 201, 120, .035);
+    }
+    .prestige-actions { display: grid; flex: 0 0 auto; gap: 7px; }
+    .prestige h3 { margin: 0; font-size: 11px; color: var(--amber); }
+    .prestige p { color: var(--muted); font-size: 9px; line-height: 1.45; margin: 5px 0 0; }
+    .prestige-button { flex: 0 0 auto; padding: 9px 11px; border: 1px solid rgba(255, 201, 120, .24); border-radius: 8px; color: var(--amber); background: rgba(255, 201, 120, .07); font-size: 10px; font-weight: 750; cursor: pointer; }
+    .prestige-button:hover:not(:disabled) { color: #211506; background: var(--amber); }
+    .prestige-button:disabled { opacity: .42; cursor: not-allowed; }
+    .test-ignition-button { padding: 7px 9px; border: 1px dashed rgba(255, 201, 120, .24); border-radius: 8px; color: #b79768; background: transparent; font-size: 9px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .test-ignition-button:hover { color: var(--amber); border-color: var(--amber); background: rgba(255, 201, 120, .06); }
+    .ignition-dialog {
+      width: min(410px, calc(100% - 32px)); padding: 25px; color: var(--text);
+      border: 1px solid rgba(255, 201, 120, .24); border-radius: 16px;
+      background: linear-gradient(160deg, #13243a, #0b1727);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, .55);
+    }
+    .ignition-dialog::backdrop { background: rgba(2, 8, 16, .76); backdrop-filter: blur(4px); }
+    .ignition-dialog h2 { margin: 0; color: var(--amber); font-size: 18px; }
+    .ignition-dialog p { margin: 12px 0 20px; color: #a9b9c9; font-size: 12px; line-height: 1.65; }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 9px; }
+    .dialog-button { padding: 9px 13px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); background: transparent; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .dialog-button:hover { color: var(--text); border-color: rgba(159, 195, 226, .34); }
+    .dialog-button.confirm { color: var(--amber); border-color: rgba(255, 201, 120, .3); background: rgba(255, 201, 120, .08); }
+    .dialog-button.confirm:hover { color: #211506; background: var(--amber); }
+    .footer { display: flex; justify-content: space-between; gap: 12px; color: #60758a; font-size: 10px; margin-top: 19px; }
+    .toast { position: fixed; z-index: 5; left: 50%; bottom: 24px; transform: translate(-50%, 12px); opacity: 0; pointer-events: none; padding: 11px 15px; border: 1px solid rgba(103, 232, 249, .22); border-radius: 10px; color: var(--text); background: #13263a; box-shadow: 0 12px 35px rgba(0, 0, 0, .35); font-size: 12px; transition: opacity .2s, transform .2s; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    @media (max-width: 760px) {
+      .shell { width: min(560px, calc(100% - 28px)); padding-top: 19px; }
+      .layout { grid-template-columns: 1fr; }
+      .reactor { min-height: auto; padding: 22px; }
+      .energy-display { margin-top: 35px; }
+      .reactor-wrap { margin-top: 18px; margin-bottom: 14px; }
+      .shop { padding: 20px; }
+      .achievement-grid, .core-research-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 420px) {
+      .save-label { display: none; }
+      .reactor { padding: 19px 15px; }
+      .stats { gap: 7px; }
+      .stat { padding: 11px 9px; }
+      .stat-value { font-size: 14px; }
+      .shop { padding: 17px 13px; }
+      .upgrade-card { grid-template-columns: 36px minmax(0, 1fr) auto; gap: 9px; padding: 10px; }
+      .upgrade-icon { width: 36px; height: 36px; }
+      .buy-button { min-width: 72px; padding: 8px 7px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">ϟ</div>
+        <div><div class="brand-name">WATTWORK</div><div class="brand-sub">A LITTLE POWER GOES A LONG WAY</div></div>
+      </div>
+      <div class="header-right">
+        <span class="live-pill"><span class="live-dot"></span> SYSTEM ONLINE</span>
+        <span class="save-label" id="save-label">● AUTO-SAVED</span>
+      </div>
+    </header>
+
+    <div class="tabs" role="tablist" aria-label="Game sections">
+      <button class="tab-button" id="tab-watts" type="button" role="tab" aria-selected="true" aria-controls="panel-watts" tabindex="0">Watts</button>
+      <button class="tab-button" id="tab-ignition" type="button" role="tab" aria-selected="false" aria-controls="panel-ignition" tabindex="-1">Ignition</button>
+      <button class="tab-button" id="tab-achievements" type="button" role="tab" aria-selected="false" aria-controls="panel-achievements" tabindex="-1">Achievements</button>
+      <button class="tab-button" id="tab-settings" type="button" role="tab" aria-selected="false" aria-controls="panel-settings" tabindex="-1">Settings</button>
+      <button class="tab-button" id="tab-automation" type="button" role="tab" aria-selected="false" aria-controls="panel-automation" tabindex="-1" hidden>Automation</button>
+    </div>
+
+    <section class="tab-content" id="panel-watts" role="tabpanel" aria-labelledby="tab-watts">
+      <div class="layout">
+      <section class="panel reactor" aria-labelledby="reactor-heading">
+        <div class="reactor-head">
+          <div><div class="eyebrow">POWER CORE / 01</div><h1 id="reactor-heading">The Grid</h1></div>
+          <span class="stage-badge" id="stage-badge">BOOT SEQUENCE</span>
+        </div>
+        <div class="energy-display" aria-live="polite">
+          <div class="energy-value" id="energy-value">0</div>
+          <div class="energy-unit">WATT-SECONDS</div>
+          <div class="rate">Generating <strong id="rate-value">0</strong> / sec</div>
+        </div>
+        <div class="reactor-wrap">
+          <div class="orbit outer"></div><div class="orbit inner"></div>
+          <button class="charge-button" id="charge-button" type="button" aria-label="Manually generate energy">
+            <span class="charge-icon" aria-hidden="true">ϟ</span><span class="charge-label">TAP TO CHARGE</span>
+          </button>
+        </div>
+        <div class="progress-block">
+          <div class="progress-copy"><span id="milestone-label">Next milestone: 100 energy</span><span id="milestone-progress">0%</span></div>
+          <div class="progress-track" role="progressbar" aria-label="Progress to next milestone" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-fill" id="progress-fill"></div></div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="stat-label">Lifetime energy</div><div class="stat-value" id="lifetime-value">0</div></div>
+          <div class="stat"><div class="stat-label">Generators</div><div class="stat-value" id="generator-count">0</div></div>
+          <div class="stat"><div class="stat-label">Core shards</div><div class="stat-value" id="shard-count">0</div></div>
+        </div>
+      </section>
+      <section class="panel shop" aria-labelledby="shop-heading">
+        <div class="shop-title-row">
+          <div><div class="eyebrow">BUILD YOUR NETWORK</div><h2 id="shop-heading">Power Plant</h2><div class="shop-count" id="shop-count">0 generators online</div></div>
+          <span class="stage-badge">SHOP</span>
+        </div>
+        <div class="shop-grid" id="shop-grid"></div>
+      </section>
+      </div>
+    </section>
+
+    <section class="panel shop tab-content" id="panel-ignition" role="tabpanel" aria-labelledby="tab-ignition" hidden>
+      <div class="eyebrow">PERMANENT PROGRESSION</div>
+      <h2 class="achievements-heading">Core Ignition</h2>
+      <p class="tab-intro">Reignite your grid to turn a run's lifetime energy into permanent core shards. Each shard boosts all output by 50%. Press <kbd>I</kbd> to open ignition.</p>
+      <div class="stats">
+        <div class="stat"><div class="stat-label">Lifetime energy this run</div><div class="stat-value" id="ignition-lifetime">0</div></div>
+        <div class="stat"><div class="stat-label">Shard reward</div><div class="stat-value" id="ignition-reward">0</div></div>
+        <div class="stat"><div class="stat-label">Output bonus</div><div class="stat-value" id="ignition-bonus">0%</div></div>
+        <div class="stat"><div class="stat-label">Core Charge</div><div class="stat-value" id="ignition-charge">0</div></div>
+      </div>
+      <div class="prestige">
+        <div><h3>⚡ CORE IGNITION</h3><p id="ignition-requirement">Requires 1,000,000 lifetime energy this run. Ignition resets energy, click upgrades, and generators.</p></div>
+        <div class="prestige-actions">
+          <button class="prestige-button" id="prestige-button" type="button" disabled>IGNITE</button>
+          <button class="test-ignition-button" id="test-ignition-button" type="button" title="Playtest core ignition without meeting the energy requirement">TEST IGNITION · FREE</button>
+        </div>
+      </div>
+      <div class="core-research">
+        <h3>Core Research</h3>
+        <p class="core-research-intro">Earn Core Charge through ignition. Spend it on permanent research to expand idle time, scale your generator network, and unlock advanced power plants. Your first real ignition also unlocks Auto-Buyer.</p>
+        <div class="research-wallet" id="core-charge-value">Core Charge: 0</div>
+        <div class="core-research-grid" id="core-research-grid"></div>
+      </div>
+      <div class="core-research ignition-upgrades">
+        <h3>One-time Ignition Upgrades</h3>
+        <p class="core-research-intro">Buy each upgrade once with Core Charge. These bonuses persist through future ignitions.</p>
+        <div class="core-research-grid" id="ignition-upgrade-grid"></div>
+      </div>
+    </section>
+
+    <section class="panel shop tab-content" id="panel-achievements" role="tabpanel" aria-labelledby="tab-achievements" hidden>
+      <div class="eyebrow">MILESTONES & REWARDS</div>
+      <h2 class="achievements-heading">Achievements</h2>
+      <p class="tab-intro">Every milestone grants its own permanent bonus. Rewards stack and stay with you through core ignition.</p>
+      <div class="achievement-summary" id="achievement-summary"></div>
+      <div class="achievement-grid" id="achievement-grid"></div>
+    </section>
+
+    <section class="panel shop tab-content" id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" hidden>
+      <div class="eyebrow">MAKE IT YOURS</div>
+      <h2 class="settings-heading">Settings</h2>
+      <p class="tab-intro">Display and accessibility options are saved with your game.</p>
+      <div class="settings-grid">
+        <label class="setting-row" for="theme-setting">
+          <span><span class="setting-name">Color theme</span><span class="setting-description">Choose the cool midnight grid or a warm solar reactor.</span></span>
+          <select class="setting-control" id="theme-setting"><option value="midnight">Midnight</option><option value="solar">Solar flare</option></select>
+        </label>
+        <label class="setting-row" for="number-setting">
+          <span><span class="setting-name">Number display</span><span class="setting-description">Show abbreviated values or full numbers.</span></span>
+          <select class="setting-control" id="number-setting"><option value="compact">Compact (1.2K)</option><option value="full">Full number (1,200)</option></select>
+        </label>
+        <label class="setting-row" for="motion-setting">
+          <span><span class="setting-name">Reduce motion</span><span class="setting-description">Limit decorative movement and transitions.</span></span>
+          <input class="setting-checkbox" id="motion-setting" type="checkbox">
+        </label>
+        <label class="setting-row" for="offline-setting">
+          <span><span class="setting-name">Offline progress</span><span class="setting-description">Earn from generators while away. Phase Battery research extends the 8-hour base cap.</span></span>
+          <input class="setting-checkbox" id="offline-setting" type="checkbox" checked>
+        </label>
+      </div>
+      <div class="settings-danger">
+        <h3>Reset game</h3>
+        <p>Erase energy, generators, achievements, shards, and saved settings from this browser.</p>
+        <button class="reset-settings-button" id="reset-button" type="button">RESET ALL PROGRESS</button>
+      </div>
+    </section>
+    <section class="panel shop tab-content" id="panel-automation" role="tabpanel" aria-labelledby="tab-automation" hidden>
+      <div class="eyebrow">AUTO-BUYER CONTROL</div>
+      <h2 class="settings-heading">Automation</h2>
+      <p class="tab-intro">Auto-Buyer purchases the cheapest affordable enabled item immediately and runs while the game is open.</p>
+      <div class="settings-grid" id="automation-controls"></div>
+    </section>
+    <div class="footer"><span>POWER THE FUTURE, ONE JOULE AT A TIME.</span><span id="offline-note"></span></div>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <dialog class="ignition-dialog" id="ignition-dialog" aria-labelledby="ignition-dialog-title" aria-describedby="ignition-dialog-copy">
+    <h2 id="ignition-dialog-title">Core ignition</h2>
+    <p id="ignition-dialog-copy"></p>
+    <div class="dialog-actions">
+      <button class="dialog-button" id="cancel-ignition-button" type="button">CANCEL</button>
+      <button class="dialog-button confirm" id="confirm-ignition-button" type="button">IGNITE</button>
+    </div>
+  </dialog>
+
+  <script>
+    (() => {
+      "use strict";
+      const SAVE_KEY = "wattwork-save-v1";
+      const BASE_OFFLINE_CAP_SECONDS = 8 * 60 * 60;
+      const GENERATOR_COST_GROWTH = 1.14;
+      const CLICK_POWER_GROWTH = 1.5;
+      const CLICK_COST_GROWTH = 1.8;
+      const SHARD_OUTPUT_BONUS = 0.5;
+      const buildings = [
+        { id: "solar", name: "Solar Array", icon: "☼", description: "A tidy little panel. Generates 1 energy / sec.", baseCost: 15, output: 1, unlock: 0 },
+        { id: "turbine", name: "Wind Turbine", icon: "↗", description: "Turns a good breeze into 8 energy / sec.", baseCost: 120, output: 8, unlock: 75 },
+        { id: "reactor", name: "Fusion Reactor", icon: "✳", description: "Small sun, big output. Generates 55 energy / sec.", baseCost: 900, output: 55, unlock: 700 },
+        { id: "dyson", name: "Dyson Collector", icon: "◉", description: "A star's worth of power. Generates 400 energy / sec.", baseCost: 7500, output: 400, unlock: 6000 },
+        { id: "antimatter", name: "Antimatter Forge", icon: "⊛", description: "Harnesses annihilation for 6,000 energy / sec.", baseCost: 250000, output: 6000, unlock: 100000, coreRequirement: 1, researchRequirement: 1 },
+        { id: "quantum", name: "Quantum Loom", icon: "⌬", description: "Weaves timelines into 150,000 energy / sec.", baseCost: 8000000, output: 150000, unlock: 1000000, coreRequirement: 3, researchRequirement: 2 }
+      ];
+      const milestones = [100, 1000, 10000, 100000, 1000000, 10000000, 100000000];
+      const achievements = [
+        { id: "first-spark", icon: "ϟ", name: "First Spark", description: "Generate your first bit of energy.", reward: "+1 energy on every tap.", condition: (s) => s.lifetime >= 1 },
+        { id: "first-generator", icon: "☼", name: "Harness the Sun", description: "Bring your first generator online.", reward: "+10% generator output.", condition: (s) => Object.values(s.generators).some((count) => count > 0) },
+        { id: "thousand-watts", icon: "✧", name: "A Thousand Watts", description: "Generate 1,000 lifetime energy in a run.", reward: "+10% to all output.", condition: (s) => s.lifetime >= 1000 },
+        { id: "ten-generators", icon: "⌘", name: "Grid Architect", description: "Own 10 generators at once.", reward: "Tap power increased by 50%.", condition: (s) => Object.values(s.generators).reduce((sum, count) => sum + count, 0) >= 10 },
+        { id: "first-shard", icon: "◆", name: "Beyond the Grid", description: "Earn your first core shard.", reward: "+25% permanent output.", condition: (s) => s.shards >= 1 },
+        { id: "first-ignition", icon: "⟳", name: "Ignition Protocol", description: "Complete your first real core ignition. Test ignitions do not count.", reward: "Unlock Auto-Buyer and the Automation tab.", condition: (s) => s.ignitions >= 1 },
+        { id: "million-watts", icon: "✹", name: "Power Millionaire", description: "Generate 1,000,000 lifetime energy in a run.", reward: "+25% generator output.", condition: (s) => s.lifetime >= 1000000 },
+        { id: "antimatter-born", icon: "⊛", name: "Matter of Antimatter", description: "Build your first Antimatter Forge.", reward: "Each Antimatter Forge adds 1% output to every generator.", condition: (s) => s.generators.antimatter > 0 },
+        { id: "quantum-weaver", icon: "⌬", name: "Weaver of Worlds", description: "Build your first Quantum Loom.", reward: "Each Quantum Loom adds 1% tap power.", condition: (s) => s.generators.quantum > 0 }
+      ];
+      const ignitionUpgradeCatalog = [
+        { id: "flux-rebate", name: "Flux Rebate", icon: "↺", cost: 5, description: "When you buy a generator or Capacitor upgrade, 80% of its listed watt cost is refunded. You must still have enough watts to cover the full listed price." },
+        { id: "solar-seed", name: "Solar Seed", icon: "☼", cost: 3, description: "Start every run after ignition with one Solar Array." },
+        { id: "capacitor-blueprint", name: "Capacitor Blueprint", icon: "⌁", cost: 3, description: "Start every run after ignition with one free Capacitor upgrade." }
+      ];
+      const freshState = () => ({
+        energy: 0, lifetime: 0, shards: 0, coreCharge: 0, clickLevel: 0, ignitions: 0,
+        ignitionUpgrades: { "flux-rebate": false, "solar-seed": false, "capacitor-blueprint": false },
+        generators: Object.fromEntries(buildings.map((building) => [building.id, 0])),
+        research: { lattice: 0, battery: 0, singularity: 0 },
+        achievements: [],
+        settings: {
+          theme: "midnight", numberFormat: "compact", reduceMotion: false, offlineProgress: true, activeTab: "watts",
+          automation: { enabled: true, capacitor: true, generators: Object.fromEntries(buildings.map((building) => [building.id, true])) }
+        },
+        lastSaved: Date.now()
+      });
+      let state = freshState();
+      let toastTimeout;
+      let displayedShopStatus = "";
+      let pendingIgnition = null;
+      const $ = (id) => document.getElementById(id);
+      const fmt = (value) => {
+        if (!Number.isFinite(value) || value < 0) return "0";
+        if (state.settings.numberFormat === "full") {
+          const decimals = value < 1 ? 3 : value < 100 ? 2 : 0;
+          return new Intl.NumberFormat("en-US", { maximumFractionDigits: decimals }).format(value);
+        }
+        if (value < 1) return value.toFixed(3);
+        if (value < 100) return Number.isInteger(value) ? String(value) : value.toFixed(2);
+        if (value < 1000) return Number.isInteger(value) ? String(value) : value.toFixed(1);
+        const suffixes = ["K", "M", "B", "T", "Qa", "Qi"];
+        let n = value, index = -1;
+        while (n >= 1000 && index < suffixes.length - 1) { n /= 1000; index++; }
+        return `${n >= 100 ? n.toFixed(0) : n >= 10 ? n.toFixed(1) : n.toFixed(2)}${suffixes[index]}`;
+      };
+      const hasAchievement = (id) => state.achievements.includes(id);
+      const generatorCount = () => Object.values(state.generators).reduce((sum, count) => sum + count, 0);
+      const globalOutputMultiplier = () => (1 + state.shards * SHARD_OUTPUT_BONUS + (hasAchievement("first-shard") ? 0.25 : 0)) * (hasAchievement("thousand-watts") ? 1.1 : 1);
+      const latticeMultiplier = () => 1 + generatorCount() * state.research.lattice * 0.005;
+      const generatorOutputMultiplier = () => globalOutputMultiplier() * latticeMultiplier() * (hasAchievement("first-generator") ? 1.1 : 1) * (hasAchievement("million-watts") ? 1.25 : 1) * (1 + (state.generators.antimatter || 0) * 0.01);
+      const costFor = (building) => Math.floor(building.baseCost * Math.pow(GENERATOR_COST_GROWTH, state.generators[building.id]));
+      const clickUpgradeCost = () => Math.floor(25 * Math.pow(CLICK_COST_GROWTH, state.clickLevel));
+      const actualPurchaseCost = (listedCost) => listedCost * (state.ignitionUpgrades["flux-rebate"] ? 0.2 : 1);
+      const clickPower = () => (Math.pow(CLICK_POWER_GROWTH, state.clickLevel) * globalOutputMultiplier() * (hasAchievement("ten-generators") ? 1.5 : 1) + (hasAchievement("first-spark") ? 1 : 0)) * (1 + (state.generators.quantum || 0) * 0.01);
+      const rate = () => buildings.reduce((sum, b) => sum + state.generators[b.id] * b.output, 0) * generatorOutputMultiplier();
+      const offlineCapSeconds = () => BASE_OFFLINE_CAP_SECONDS + state.research.battery * 4 * 60 * 60;
+      const isBuildingUnlocked = (building) => state.lifetime >= building.unlock
+        && state.shards >= (building.coreRequirement || 0)
+        && state.research.singularity >= (building.researchRequirement || 0);
+      const researchCost = (id) => {
+        const level = state.research[id];
+        if (id === "singularity") return level === 0 ? 2 : 4;
+        return level + 1;
+      };
+      const researchCatalog = [
+        { id: "lattice", name: "Resonant Lattice", icon: "⌘", max: 10, description: "Each owned generator increases all generator output by 0.5% per research level. The bonus grows as your grid expands." },
+        { id: "battery", name: "Phase Battery", icon: "◷", max: 5, description: "Adds 4 hours to your offline earnings cap per level, up to 28 hours." },
+        { id: "singularity", name: "Singularity Blueprint", icon: "✳", max: 2, description: "Unlocks Antimatter Forges at level 1 and Quantum Looms at level 2. Advanced plants also require enough lifetime shards." }
+      ];
+      const shardsForPrestige = () => Math.max(1, Math.floor(Math.sqrt(state.lifetime / 1000000)));
+      const shopStatus = () => [
+        `${state.energy >= clickUpgradeCost()}`,
+        ...buildings.map((building) => `${state.energy >= costFor(building)}:${isBuildingUnlocked(building)}`)
+      ].join("|");
+
+      function load() {
+        try {
+          const raw = localStorage.getItem(SAVE_KEY);
+          if (!raw) return;
+          const saved = JSON.parse(raw);
+          if (!saved || typeof saved !== "object") throw new Error("Save data is not an object");
+          const defaults = freshState();
+          for (const key of ["energy", "lifetime", "shards", "coreCharge", "clickLevel"]) {
+            if (Number.isFinite(saved[key]) && saved[key] >= 0) defaults[key] = saved[key];
+          }
+          defaults.ignitions = Number.isSafeInteger(saved.ignitions) && saved.ignitions >= 0
+            ? saved.ignitions
+            : defaults.shards > 0 ? 1 : 0;
+          if (saved.ignitionUpgrades && typeof saved.ignitionUpgrades === "object") {
+            for (const upgrade of ignitionUpgradeCatalog) {
+              if (saved.ignitionUpgrades[upgrade.id] === true) defaults.ignitionUpgrades[upgrade.id] = true;
+            }
+          }
+          if (saved.generators && typeof saved.generators === "object") {
+            for (const building of buildings) {
+              const count = saved.generators[building.id];
+              if (Number.isSafeInteger(count) && count >= 0) defaults.generators[building.id] = count;
+            }
+          }
+          if (saved.research && typeof saved.research === "object") {
+            for (const key of Object.keys(defaults.research)) {
+              if (Number.isSafeInteger(saved.research[key]) && saved.research[key] >= 0) {
+                defaults.research[key] = saved.research[key];
+              }
+            }
+          }
+          if (Array.isArray(saved.achievements)) {
+            const validAchievements = new Set(achievements.map((achievement) => achievement.id));
+            defaults.achievements = [...new Set(saved.achievements.filter((id) => validAchievements.has(id)))];
+          }
+          if (defaults.ignitions > 0 && !defaults.achievements.includes("first-ignition")) {
+            defaults.achievements.push("first-ignition");
+          }
+          if (saved.settings && typeof saved.settings === "object") {
+            if (saved.settings.theme === "midnight" || saved.settings.theme === "solar") defaults.settings.theme = saved.settings.theme;
+            if (saved.settings.numberFormat === "compact" || saved.settings.numberFormat === "full") defaults.settings.numberFormat = saved.settings.numberFormat;
+            if (typeof saved.settings.reduceMotion === "boolean") defaults.settings.reduceMotion = saved.settings.reduceMotion;
+            if (typeof saved.settings.offlineProgress === "boolean") defaults.settings.offlineProgress = saved.settings.offlineProgress;
+            if (["watts", "ignition", "achievements", "settings"].includes(saved.settings.activeTab)
+              || saved.settings.activeTab === "automation" && defaults.ignitions > 0) {
+              defaults.settings.activeTab = saved.settings.activeTab;
+            }
+            const savedAutomation = saved.settings.automation;
+            if (savedAutomation && typeof savedAutomation === "object") {
+              if (typeof savedAutomation.enabled === "boolean") defaults.settings.automation.enabled = savedAutomation.enabled;
+              if (typeof savedAutomation.capacitor === "boolean") defaults.settings.automation.capacitor = savedAutomation.capacitor;
+              if (savedAutomation.generators && typeof savedAutomation.generators === "object") {
+                for (const building of buildings) {
+                  if (typeof savedAutomation.generators[building.id] === "boolean") {
+                    defaults.settings.automation.generators[building.id] = savedAutomation.generators[building.id];
+                  }
+                }
+              }
+            }
+          }
+          defaults.lastSaved = Number.isFinite(saved.lastSaved) ? saved.lastSaved : Date.now();
+          state = defaults;
+          const away = state.settings.offlineProgress ? Math.min(offlineCapSeconds(), Math.max(0, (Date.now() - state.lastSaved) / 1000)) : 0;
+          const earned = rate() * away;
+          if (earned > 0) {
+            state.energy += earned;
+            state.lifetime += earned;
+            $("offline-note").textContent = `+${fmt(earned)} while you were away`;
+          }
+        } catch (error) {
+          console.error("Unable to load Wattwork save:", error);
+          showToast("Save data could not be loaded. A fresh grid has started.");
+        }
+      }
+      function save() {
+        state.lastSaved = Date.now();
+        try {
+          localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+          $("save-label").textContent = "● AUTO-SAVED";
+        } catch (error) {
+          $("save-label").textContent = "● SAVE UNAVAILABLE";
+          console.error("Unable to save Wattwork progress:", error);
+        }
+      }
+      function showToast(message) {
+        const toast = $("toast");
+        toast.textContent = message;
+        toast.classList.add("show");
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => toast.classList.remove("show"), 2300);
+      }
+      function checkAchievements() {
+        const unlocked = [];
+        for (const achievement of achievements) {
+          if (!hasAchievement(achievement.id) && achievement.condition(state)) {
+            state.achievements.push(achievement.id);
+            unlocked.push(achievement);
+          }
+        }
+        if (unlocked.length) {
+          save();
+          for (const achievement of unlocked) showToast(`Achievement unlocked: ${achievement.name} — ${achievement.reward}`);
+          if (state.settings.activeTab === "achievements") renderAchievements();
+          return true;
+        }
+        return false;
+      }
+      function renderAchievements() {
+        const grid = $("achievement-grid");
+        grid.replaceChildren();
+        const unlockedCount = state.achievements.length;
+        $("achievement-summary").textContent = `${unlockedCount} / ${achievements.length} unlocked · rewards are permanent`;
+        for (const achievement of achievements) {
+          const unlocked = hasAchievement(achievement.id);
+          const card = document.createElement("article");
+          card.className = `achievement-card${unlocked ? " unlocked" : ""}`;
+          const icon = document.createElement("div");
+          icon.className = "achievement-icon";
+          icon.setAttribute("aria-hidden", "true");
+          icon.textContent = achievement.icon;
+          const details = document.createElement("div");
+          const name = document.createElement("div");
+          name.className = "achievement-name";
+          name.textContent = achievement.name;
+          const description = document.createElement("div");
+          description.className = "achievement-description";
+          description.textContent = achievement.description;
+          const reward = document.createElement("div");
+          reward.className = "achievement-reward";
+          reward.textContent = `Reward: ${achievement.reward}`;
+          const status = document.createElement("div");
+          status.className = "achievement-status";
+          status.textContent = unlocked ? "UNLOCKED" : "LOCKED";
+          details.append(name, description, reward, status);
+          card.append(icon, details);
+          grid.append(card);
+        }
+      }
+      function renderResearch() {
+        const grid = $("core-research-grid");
+        grid.replaceChildren();
+        $("core-charge-value").textContent = `Core Charge: ${fmt(state.coreCharge)}`;
+        for (const research of researchCatalog) {
+          const level = state.research[research.id];
+          const maxed = level >= research.max;
+          const cost = maxed ? 0 : researchCost(research.id);
+          const card = document.createElement("article");
+          card.className = `research-card${!maxed && state.coreCharge >= cost ? " affordable" : ""}`;
+          const icon = document.createElement("div");
+          icon.className = "research-icon";
+          icon.setAttribute("aria-hidden", "true");
+          icon.textContent = research.icon;
+          const details = document.createElement("div");
+          const name = document.createElement("div");
+          name.className = "research-name";
+          name.textContent = `${research.name} · ${level}/${research.max}`;
+          const description = document.createElement("div");
+          description.className = "research-description";
+          if (research.id === "lattice") {
+            description.textContent = `${research.description} Current bonus: +${fmt(generatorCount() * level * 0.5)}% with ${fmt(generatorCount())} generators.`;
+          } else if (research.id === "battery") {
+            description.textContent = `${research.description} Current cap: ${8 + level * 4} hours.`;
+          } else {
+            description.textContent = `${research.description} Current unlock: ${level === 0 ? "Antimatter Forge research" : level === 1 ? "Antimatter Forge" : "Antimatter Forge and Quantum Loom"}.`;
+          }
+          details.append(name, description);
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "research-button";
+          button.disabled = maxed || state.coreCharge < cost;
+          button.textContent = maxed ? "MAX LEVEL" : `RESEARCH · ${cost} ⚡`;
+          button.setAttribute("aria-label", maxed ? `${research.name} max level` : `Research ${research.name} for ${cost} Core Charge`);
+          button.addEventListener("click", () => buyResearch(research.id));
+          card.append(icon, details, button);
+          grid.append(card);
+        }
+      }
+      function renderIgnitionUpgrades() {
+        const grid = $("ignition-upgrade-grid");
+        grid.replaceChildren();
+        for (const upgrade of ignitionUpgradeCatalog) {
+          const purchased = state.ignitionUpgrades[upgrade.id];
+          const card = document.createElement("article");
+          card.className = `research-card${!purchased && state.coreCharge >= upgrade.cost ? " affordable" : ""}`;
+          const icon = document.createElement("div");
+          icon.className = "research-icon";
+          icon.setAttribute("aria-hidden", "true");
+          icon.textContent = upgrade.icon;
+          const details = document.createElement("div");
+          const name = document.createElement("div");
+          name.className = "research-name";
+          name.textContent = upgrade.name;
+          const description = document.createElement("div");
+          description.className = "research-description";
+          description.textContent = upgrade.description;
+          details.append(name, description);
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "research-button";
+          button.disabled = purchased || state.coreCharge < upgrade.cost;
+          button.textContent = purchased ? "PURCHASED" : `BUY ONCE · ${upgrade.cost} ⚡`;
+          button.setAttribute("aria-label", purchased ? `${upgrade.name} purchased` : `Buy ${upgrade.name} for ${upgrade.cost} Core Charge`);
+          button.addEventListener("click", () => buyIgnitionUpgrade(upgrade.id));
+          card.append(icon, details, button);
+          grid.append(card);
+        }
+      }
+      function buyIgnitionUpgrade(id) {
+        const upgrade = ignitionUpgradeCatalog.find((item) => item.id === id);
+        if (!upgrade || state.ignitionUpgrades[id] || state.coreCharge < upgrade.cost) return;
+        state.coreCharge -= upgrade.cost;
+        state.ignitionUpgrades[id] = true;
+        save();
+        render();
+        showToast(`${upgrade.name} acquired permanently.`);
+      }
+      function buyResearch(id) {
+        const research = researchCatalog.find((item) => item.id === id);
+        if (!research) return;
+        const level = state.research[id];
+        if (level >= research.max) return;
+        const cost = researchCost(id);
+        if (state.coreCharge < cost) return;
+        state.coreCharge -= cost;
+        state.research[id]++;
+        save();
+        render();
+        showToast(`${research.name} researched · level ${state.research[id]}`);
+      }
+      function applySettings() {
+        document.body.dataset.theme = state.settings.theme;
+        document.body.classList.toggle("reduce-motion", state.settings.reduceMotion);
+        $("theme-setting").value = state.settings.theme;
+        $("number-setting").value = state.settings.numberFormat;
+        $("motion-setting").checked = state.settings.reduceMotion;
+        $("offline-setting").checked = state.settings.offlineProgress;
+      }
+      function availableTabNames() {
+        const tabNames = ["watts", "ignition", "achievements", "settings"];
+        if (hasAchievement("first-ignition")) tabNames.push("automation");
+        return tabNames;
+      }
+      function setTab(name, focus = false) {
+        const tabNames = availableTabNames();
+        const allTabNames = [...tabNames];
+        if (!allTabNames.includes("automation")) allTabNames.push("automation");
+        const automationUnlocked = hasAchievement("first-ignition");
+        if (!tabNames.includes(name)) return;
+        state.settings.activeTab = name;
+        for (const tabName of allTabNames) {
+          const visible = tabName !== "automation" || automationUnlocked;
+          const selected = visible && tabName === name;
+          const tab = $(`tab-${tabName}`);
+          tab.hidden = !visible;
+          tab.setAttribute("aria-selected", String(selected));
+          tab.tabIndex = selected ? 0 : -1;
+          $(`panel-${tabName}`).hidden = !selected;
+        }
+        if (name === "achievements") renderAchievements();
+        if (name === "ignition") {
+          renderResearch();
+          renderIgnitionUpgrades();
+        }
+        if (name === "automation") renderAutomation();
+        if (focus) $(`tab-${name}`).focus();
+      }
+      function renderAutomation() {
+        const controls = $("automation-controls");
+        controls.replaceChildren();
+        const automation = state.settings.automation;
+        const appendToggle = (id, name, description, checked, onChange) => {
+          const row = document.createElement("label");
+          row.className = "setting-row";
+          row.htmlFor = id;
+          const copy = document.createElement("span");
+          const title = document.createElement("span");
+          title.className = "setting-name";
+          title.textContent = name;
+          const detail = document.createElement("span");
+          detail.className = "setting-description";
+          detail.textContent = description;
+          copy.append(title, detail);
+          const input = document.createElement("input");
+          input.className = "setting-checkbox";
+          input.type = "checkbox";
+          input.id = id;
+          input.checked = checked;
+          input.addEventListener("change", () => {
+            onChange(input.checked);
+            save();
+          });
+          row.append(copy, input);
+          controls.append(row);
+        };
+        appendToggle("automation-enabled", "Auto-Buyer", "Master switch for automatic purchases.", automation.enabled, (enabled) => {
+          automation.enabled = enabled;
+        });
+        appendToggle("automation-capacitor", "Capacitor upgrades", "Automatically buy Capacitor upgrades when affordable.", automation.capacitor, (enabled) => {
+          automation.capacitor = enabled;
+        });
+        for (const building of buildings) {
+          appendToggle(`automation-${building.id}`, building.name, `Automatically buy ${building.name} when affordable.`, automation.generators[building.id], (enabled) => {
+            automation.generators[building.id] = enabled;
+          });
+        }
+      }
+      function syncAutomationTab() {
+        const unlocked = hasAchievement("first-ignition");
+        const selected = unlocked && state.settings.activeTab === "automation";
+        $("tab-automation").hidden = !unlocked;
+        $("tab-automation").setAttribute("aria-selected", String(selected));
+        $("tab-automation").tabIndex = selected ? 0 : -1;
+        $("panel-automation").hidden = !selected;
+      }
+      function renderShop() {
+        const grid = $("shop-grid");
+        grid.replaceChildren();
+        const clickCost = clickUpgradeCost();
+        const capacitor = document.createElement("article");
+        capacitor.className = `upgrade-card${state.energy >= clickCost ? " affordable" : ""}`;
+        const capacitorIcon = document.createElement("div");
+        capacitorIcon.className = "upgrade-icon";
+        capacitorIcon.setAttribute("aria-hidden", "true");
+        capacitorIcon.textContent = "⌁";
+        const capacitorDetails = document.createElement("div");
+        const capacitorName = document.createElement("div");
+        capacitorName.className = "upgrade-name";
+        capacitorName.textContent = `Capacitor  ·  ${state.clickLevel}`;
+        const capacitorDescription = document.createElement("div");
+        capacitorDescription.className = "upgrade-description";
+        capacitorDescription.textContent = `Boosts charge per tap by 50%. Current charge: ${fmt(clickPower())}.${state.ignitionUpgrades["flux-rebate"] ? " Flux Rebate returns 80% of the listed cost." : ""}`;
+        capacitorDetails.append(capacitorName, capacitorDescription);
+        const capacitorButton = document.createElement("button");
+        capacitorButton.type = "button";
+        capacitorButton.className = "buy-button";
+        capacitorButton.disabled = state.energy < clickCost;
+        capacitorButton.setAttribute("aria-label", `Upgrade Capacitor for ${fmt(clickCost)} energy`);
+        capacitorButton.innerHTML = `UPGRADE<span class="buy-cost">${fmt(clickCost)} ⚡</span>`;
+        capacitorButton.addEventListener("click", buyCapacitor);
+        capacitor.append(capacitorIcon, capacitorDetails, capacitorButton);
+        grid.append(capacitor);
+        for (const building of buildings) {
+          const owned = state.generators[building.id];
+          const cost = costFor(building);
+          const unlocked = isBuildingUnlocked(building);
+          const locked = !unlocked;
+          const card = document.createElement("article");
+          card.className = `upgrade-card${state.energy >= cost ? " affordable" : ""}${locked ? " locked" : ""}`;
+          const icon = document.createElement("div");
+          icon.className = "upgrade-icon";
+          icon.setAttribute("aria-hidden", "true");
+          icon.textContent = building.icon;
+          const details = document.createElement("div");
+          const name = document.createElement("div");
+          name.className = "upgrade-name";
+          name.textContent = `${building.name}  ·  ${owned}`;
+          const description = document.createElement("div");
+          description.className = "upgrade-description";
+          description.textContent = locked
+            ? building.researchRequirement && state.research.singularity < building.researchRequirement
+              ? `Requires Singularity Blueprint level ${building.researchRequirement}.`
+              : building.coreRequirement && state.shards < building.coreRequirement
+                ? `Requires ${building.coreRequirement} lifetime core shards.`
+                : `Unlock at ${fmt(building.unlock)} lifetime energy this run.`
+            : `${building.description}${state.ignitionUpgrades["flux-rebate"] ? " Flux Rebate returns 80% of the listed cost." : ""}`;
+          details.append(name, description);
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "buy-button";
+          button.disabled = locked || state.energy < cost;
+          button.setAttribute("aria-label", `Buy ${building.name} for ${fmt(cost)} energy`);
+          button.innerHTML = `BUY<span class="buy-cost">${fmt(cost)} ⚡</span>`;
+          button.addEventListener("click", () => buy(building));
+          card.append(icon, details, button);
+          grid.append(card);
+        }
+        displayedShopStatus = shopStatus();
+      }
+      function render(updateShop = true) {
+        checkAchievements();
+        syncAutomationTab();
+        $("energy-value").textContent = fmt(state.energy);
+        $("rate-value").textContent = fmt(rate());
+        $("lifetime-value").textContent = fmt(state.lifetime);
+        const count = generatorCount();
+        $("generator-count").textContent = fmt(count);
+        $("shop-count").textContent = `${fmt(count)} generator${count === 1 ? "" : "s"} online`;
+        $("shard-count").textContent = fmt(state.shards);
+        const prestigeButton = $("prestige-button");
+        const canPrestige = state.lifetime >= 1000000;
+        prestigeButton.disabled = !canPrestige;
+        prestigeButton.textContent = canPrestige ? `IGNITE · +${fmt(shardsForPrestige())}` : "IGNITE";
+        $("ignition-lifetime").textContent = fmt(state.lifetime);
+        $("ignition-reward").textContent = canPrestige ? `+${fmt(shardsForPrestige())}` : "—";
+        $("ignition-bonus").textContent = `${fmt(state.shards * SHARD_OUTPUT_BONUS * 100)}%`;
+        $("ignition-charge").textContent = fmt(state.coreCharge);
+        $("core-charge-value").textContent = `Core Charge: ${fmt(state.coreCharge)}`;
+        $("stage-badge").textContent = state.lifetime >= 100000 ? "GRID EXPANSION" : state.lifetime >= 10000 ? "POWERING UP" : state.lifetime >= 1000 ? "GRID ONLINE" : "BOOT SEQUENCE";
+        const nextIndex = milestones.findIndex((m) => m > state.lifetime);
+        const next = nextIndex < 0 ? milestones[milestones.length - 1] * 10 : milestones[nextIndex];
+        const previous = nextIndex < 0 ? milestones[milestones.length - 1] : nextIndex === 0 ? 0 : milestones[nextIndex - 1];
+        const progress = Math.max(0, Math.min(100, ((state.lifetime - previous) / (next - previous)) * 100));
+        $("milestone-label").textContent = `Next milestone: ${fmt(next)} lifetime energy`;
+        $("milestone-progress").textContent = `${Math.floor(progress)}%`;
+        $("progress-fill").style.width = `${progress}%`;
+        $("progress-fill").parentElement.setAttribute("aria-valuenow", String(Math.floor(progress)));
+        if (updateShop) renderShop();
+        if (updateShop) {
+          renderResearch();
+          renderIgnitionUpgrades();
+        }
+        if (state.settings.activeTab === "achievements") renderAchievements();
+      }
+      function buyCapacitor() {
+        const cost = clickUpgradeCost();
+        if (state.energy < cost) return false;
+        state.energy = Math.max(0, state.energy - actualPurchaseCost(cost));
+        state.clickLevel++;
+        save();
+        render();
+        return true;
+      }
+      function buy(building) {
+        const cost = costFor(building);
+        if (state.energy < cost || !isBuildingUnlocked(building)) return false;
+        state.energy = Math.max(0, state.energy - actualPurchaseCost(cost));
+        state.generators[building.id]++;
+        save();
+        render();
+        return true;
+      }
+      function autoBuyCheapest() {
+        if (!hasAchievement("first-ignition") || !state.settings.automation.enabled) return false;
+        let cheapest = null;
+        const capacitorCost = clickUpgradeCost();
+        if (state.settings.automation.capacitor && state.energy >= capacitorCost) {
+          cheapest = { cost: capacitorCost, buy: buyCapacitor };
+        }
+        for (const building of buildings) {
+          const cost = costFor(building);
+          if (state.settings.automation.generators[building.id] && isBuildingUnlocked(building)
+            && state.energy >= cost && (!cheapest || cost < cheapest.cost)) {
+            cheapest = { cost, buy: () => buy(building) };
+          }
+        }
+        return cheapest ? cheapest.buy() : false;
+      }
+      $("charge-button").addEventListener("click", (event) => {
+        const gain = clickPower();
+        state.energy += gain;
+        state.lifetime += gain;
+        const rect = $("charge-button").getBoundingClientRect();
+        const feedback = document.createElement("span");
+        feedback.className = "tap-feedback";
+        feedback.textContent = `+${fmt(gain)} ⚡`;
+        feedback.style.left = `${event.clientX ? event.clientX - rect.left : rect.width / 2}px`;
+        feedback.style.top = `${event.clientY ? event.clientY - rect.top : rect.height / 2}px`;
+        $("charge-button").append(feedback);
+        feedback.addEventListener("animationend", () => feedback.remove(), { once: true });
+        render();
+      });
+      function igniteCore(gained, isTest = false) {
+        if (!isTest && state.lifetime < 1000000) return;
+        pendingIgnition = { gained, isTest };
+        $("ignition-dialog-title").textContent = isTest ? "Free test ignition" : "Ignite the core?";
+        $("ignition-dialog-copy").textContent = `This will reset your energy, click upgrades, and generators. You will gain ${gained} core shard${gained === 1 ? "" : "s"} and ${gained} Core Charge for permanent research. Each shard permanently boosts all output by 50%.`;
+        $("confirm-ignition-button").textContent = `IGNITE · +${fmt(gained)}`;
+        $("ignition-dialog").showModal();
+      }
+      $("cancel-ignition-button").addEventListener("click", () => $("ignition-dialog").close());
+      $("ignition-dialog").addEventListener("close", () => { pendingIgnition = null; });
+      $("confirm-ignition-button").addEventListener("click", () => {
+        if (!pendingIgnition) return;
+        const { gained, isTest } = pendingIgnition;
+        $("ignition-dialog").close();
+        const upgrades = state.ignitionUpgrades;
+        const nextRun = freshState();
+        nextRun.generators.solar = upgrades["solar-seed"] ? 1 : 0;
+        nextRun.clickLevel = upgrades["capacitor-blueprint"] ? 1 : 0;
+        state = {
+          ...nextRun,
+          shards: state.shards + gained,
+          coreCharge: state.coreCharge + gained,
+          ignitions: state.ignitions + (isTest ? 0 : 1),
+          achievements: state.achievements,
+          research: state.research,
+          ignitionUpgrades: upgrades,
+          settings: state.settings
+        };
+        save();
+        render();
+        showToast(`${isTest ? "Test ignition" : "Core ignited"}. +${gained} shard${gained === 1 ? "" : "s"} — output boosted by 50% per shard!`);
+      });
+      $("prestige-button").addEventListener("click", () => igniteCore(shardsForPrestige()));
+      $("test-ignition-button").addEventListener("click", () => igniteCore(1, true));
+      $("reset-button").addEventListener("click", () => {
+        if (!window.confirm("Reset all Wattwork progress? This cannot be undone.")) return;
+        state = freshState();
+        $("offline-note").textContent = "";
+        applySettings();
+        setTab("watts");
+        save();
+        render();
+        showToast("Grid reset. A new beginning.");
+      });
+      const allTabNames = ["watts", "ignition", "achievements", "settings", "automation"];
+      for (const tabName of allTabNames) {
+        $(`tab-${tabName}`).addEventListener("click", () => {
+          setTab(tabName);
+          save();
+        });
+        $(`tab-${tabName}`).addEventListener("keydown", (event) => {
+          const tabNames = availableTabNames();
+          const current = tabNames.indexOf(tabName);
+          if (current < 0) return;
+          let next = current;
+          if (event.key === "ArrowRight") next = (current + 1) % tabNames.length;
+          else if (event.key === "ArrowLeft") next = (current - 1 + tabNames.length) % tabNames.length;
+          else if (event.key === "Home") next = 0;
+          else if (event.key === "End") next = tabNames.length - 1;
+          else return;
+          event.preventDefault();
+          setTab(tabNames[next], true);
+          save();
+        });
+      }
+      document.addEventListener("keydown", (event) => {
+        if (event.key.toLowerCase() !== "i" || event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
+        const target = event.target;
+        if (target instanceof HTMLElement && (target.isContentEditable || target.closest("input, select, textarea, [contenteditable='true']"))) return;
+        if ($("ignition-dialog").open) return;
+        setTab("ignition");
+        save();
+        if (state.lifetime >= 1000000) igniteCore(shardsForPrestige());
+        else showToast("Ignition opened. Reach 1,000,000 lifetime energy to ignite.");
+      });
+      $("theme-setting").addEventListener("change", (event) => {
+        state.settings.theme = event.target.value;
+        applySettings();
+        save();
+      });
+      $("number-setting").addEventListener("change", (event) => {
+        state.settings.numberFormat = event.target.value;
+        save();
+        render();
+      });
+      $("motion-setting").addEventListener("change", (event) => {
+        state.settings.reduceMotion = event.target.checked;
+        applySettings();
+        save();
+      });
+      $("offline-setting").addEventListener("change", (event) => {
+        state.settings.offlineProgress = event.target.checked;
+        save();
+      });
+      load();
+      applySettings();
+      setTab(state.settings.activeTab);
+      render();
+      save();
+      let previousTick = null;
+      function productionFrame(now) {
+        const elapsed = previousTick === null
+          ? 0
+          : Math.min(state.settings.offlineProgress ? offlineCapSeconds() : 1, Math.max(0, (now - previousTick) / 1000));
+        previousTick = now;
+        const earned = rate() * elapsed;
+        if (earned > 0) {
+          state.energy += earned;
+          state.lifetime += earned;
+        }
+        render(false);
+        if (hasAchievement("first-ignition") && state.settings.automation.enabled) {
+          if (autoBuyCheapest()) {
+            render();
+          }
+        }
+        if (shopStatus() !== displayedShopStatus) renderShop();
+        requestAnimationFrame(productionFrame);
+      }
+      requestAnimationFrame(productionFrame);
+      setInterval(save, 5000);
+      window.addEventListener("beforeunload", save);
+    })();
+  </script>
+</body>
+</html>
