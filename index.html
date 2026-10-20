@@ -351,7 +351,7 @@
     <section class="panel shop tab-content" id="panel-automation" role="tabpanel" aria-labelledby="tab-automation" hidden>
       <div class="eyebrow">AUTO-BUYER CONTROL</div>
       <h2 class="settings-heading">Automation</h2>
-      <p class="tab-intro">Auto-Buyer purchases the cheapest affordable enabled item immediately and runs while the game is open.</p>
+      <p class="tab-intro">Auto-Buyer runs while the game is open. It chooses the enabled affordable generator with the most production per listed watt. If your balance is at least 100 times a generator's price, it buys the most expensive generator within that threshold regardless of value. Capacitor upgrades are bought when no enabled generator is affordable.</p>
       <div class="settings-grid" id="automation-controls"></div>
     </section>
     <div class="footer"><span>POWER THE FUTURE, ONE JOULE AT A TIME.</span><span id="offline-note"></span></div>
@@ -894,19 +894,26 @@
       }
       function autoBuyCheapest() {
         if (!hasAchievement("first-ignition") || !state.settings.automation.enabled) return false;
-        let cheapest = null;
-        const capacitorCost = clickUpgradeCost();
-        if (state.settings.automation.capacitor && state.energy >= capacitorCost) {
-          cheapest = { cost: capacitorCost, buy: buyCapacitor };
-        }
+        const candidates = [];
         for (const building of buildings) {
           const cost = costFor(building);
           if (state.settings.automation.generators[building.id] && isBuildingUnlocked(building)
-            && state.energy >= cost && (!cheapest || cost < cheapest.cost)) {
-            cheapest = { cost, buy: () => buy(building) };
+            && state.energy >= cost) {
+            candidates.push({ building, cost, value: building.output / cost });
           }
         }
-        return cheapest ? cheapest.buy() : false;
+        const abundant = candidates
+          .filter((candidate) => state.energy >= candidate.cost * 100)
+          .sort((a, b) => b.cost - a.cost)[0];
+        if (abundant) return buy(abundant.building);
+        if (candidates.length) {
+          const bestValue = candidates.reduce((best, candidate) => candidate.value > best.value ? candidate : best);
+          return buy(bestValue.building);
+        }
+        const capacitorCost = clickUpgradeCost();
+        return state.settings.automation.capacitor && state.energy >= capacitorCost
+          ? buyCapacitor()
+          : false;
       }
       $("charge-button").addEventListener("click", (event) => {
         const gain = clickPower();
